@@ -2,25 +2,26 @@ package wwckl.projectmiki.activity;
 
 import java.util.Locale;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBar;
 import android.os.Bundle;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import wwckl.projectmiki.R;
+import wwckl.projectmiki.fragment.DutchFragment;
+import wwckl.projectmiki.fragment.TreatFragment;
 
-public class BillSplitterActivity extends ActionBarActivity implements ActionBar.TabListener {
+public class BillSplitterActivity extends ActionBarActivity implements ActionBar.TabListener,
+        TreatFragment.OnFragmentInteractionListener {
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -115,6 +116,11 @@ public class BillSplitterActivity extends ActionBarActivity implements ActionBar
     public void onTabReselected (ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
     }
 
+    @Override
+    public void onFragmentInteraction (String id) {
+
+    }
+
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
@@ -127,9 +133,12 @@ public class BillSplitterActivity extends ActionBarActivity implements ActionBar
 
         @Override
         public Fragment getItem (int position) {
-            // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
-            return PlaceholderFragment.newInstance(position + 1);
+            switch (position) {
+                case 1:
+                    return TreatFragment.newInstance("test1", "test2");
+                default:
+                    return DutchFragment.newInstance();
+            }
         }
 
         @Override
@@ -143,11 +152,11 @@ public class BillSplitterActivity extends ActionBarActivity implements ActionBar
             Locale l = Locale.getDefault();
             switch (position) {
                 case 0:
-                    return getString(R.string.title_section1).toUpperCase(l);
+                    return getString(R.string.dutch).toUpperCase(l);
                 case 1:
-                    return getString(R.string.title_section2).toUpperCase(l);
+                    return getString(R.string.treat).toUpperCase(l);
                 case 2:
-                    return getString(R.string.title_section3).toUpperCase(l);
+                    return getString(R.string.share).toUpperCase(l);
             }
             return null;
         }
@@ -181,7 +190,7 @@ public class BillSplitterActivity extends ActionBarActivity implements ActionBar
         @Override
         public View onCreateView (LayoutInflater inflater, ViewGroup container,
                                   Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_bill_splitter, container, false);
+            View rootView = inflater.inflate(R.layout.fragment_dutch, container, false);
             return rootView;
         }
     }
