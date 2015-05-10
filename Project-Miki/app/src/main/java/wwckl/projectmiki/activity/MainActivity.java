@@ -1,9 +1,11 @@
-package wwckl.projectmiki;
+package wwckl.projectmiki.activity;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import wwckl.projectmiki.R;
 
 
 public class MainActivity extends ActionBarActivity {
