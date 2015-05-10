@@ -6,39 +6,75 @@
               android:padding="10dp"
               tools:context="wwckl.projectmiki.activity.WelcomeActivity">
 
-
-    <ImageView
-        android:id="@+id/imgHeader"
+    <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@android:color/background_light"/>
+        android:id="@+id/btnCamera1"
+        android:src="@drawable/ic_camera_alt_black_48dp"
+        android:layout_above="@+id/btnBatch1"
+        android:layout_alignLeft="@+id/btnBatch1"
+        android:layout_alignStart="@+id/btnBatch1" />
 
-    <!-- Add this line when we have icons-->
-    <!-- android:drawableLeft="@drawable/btn_icon"-->
-    <Button
-        android:id="@+id/buttonTakeSinglePhoto"
-        android:layout_width="match_parent"
+    <ImageButton
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10sp"
-        android:layout_margin="20sp"
-        android:background="@android:color/background_light"
-        android:text="@string/take_a_photo_receipt"/>
+        android:id="@+id/btnBatch1"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/ic_camera_roll_black_48dp"
+        android:visibility="invisible" />
 
-    <Button
-        android:id="@+id/buttonTakeMultiplePhoto"
-        android:layout_width="match_parent"
+    <ImageButton
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10sp"
-        android:layout_margin="20sp"
-        android:background="@android:color/background_light"
-        android:text="@string/take_multiple_photo_receipt"/>
+        android:id="@+id/btnGallery1"
+        android:src="@drawable/ic_collections_black_48dp"
+        android:layout_below="@+id/btnBatch1"
+        android:layout_alignLeft="@+id/btnBatch1"
+        android:layout_alignStart="@+id/btnBatch1"
+        android:clickable="true" />
 
-    <Button
-        android:id="@+id/buttonImageGallery"
-        android:layout_width="match_parent"
+    <CheckBox
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="10sp"
-        android:layout_margin="20sp"
-        android:background="@android:color/background_light"
-        android:text="@string/select_image_from_gallery"/>
+        android:text="Do not show this screen next time."
+        android:id="@+id/checkBox"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:checked="false" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Select an image from gallery"
+        android:id="@+id/textView"
+        android:layout_alignBottom="@+id/btnGallery1"
+        android:layout_toRightOf="@+id/btnGallery1"
+        android:layout_toEndOf="@+id/btnGallery1" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Take a photo of receipt"
+        android:id="@+id/textView2"
+        android:layout_alignBottom="@+id/btnCamera1"
+        android:layout_toRightOf="@+id/btnCamera1"
+        android:layout_toEndOf="@+id/btnCamera1" />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imgWWCodeKL"
+        android:src="@drawable/project_miki_banner"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/btnCamera1"
+        android:contentDescription="Project Miki banner"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
 </LinearLayout>
