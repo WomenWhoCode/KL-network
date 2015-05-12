@@ -13,6 +13,7 @@ import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import wwckl.projectmiki.R;
+import wwckl.projectmiki.models.Item;
 import wwckl.projectmiki.models.Receipt;
 
 /**
@@ -75,7 +76,7 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
         }
 
         // TODO: Change Adapter to display your content
-        mAdapter = new ArrayAdapter<Receipt.DummyItem>(getActivity(),
+        mAdapter = new ArrayAdapter<>(getActivity(),
                                                        android.R.layout.simple_list_item_1, android.R.id.text1, Receipt.ITEMS);
     }
 
@@ -117,7 +118,7 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
         if (null != mListener) {
             // Notify the active callbacks interface (the activity, if the
             // fragment is attached to one) that an item has been selected.
-            mListener.onFragmentInteraction(Receipt.ITEMS.get(position).id);
+            mListener.onFragmentInteraction(Receipt.ITEMS.get(position).getId());
         }
     }
 
@@ -146,7 +147,7 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        public void onFragmentInteraction (String id);
+        public void onFragmentInteraction (int id);
     }
 
 }
