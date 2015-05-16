@@ -1,28 +1,25 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
-              android:padding="10dp"
-              tools:context="wwckl.projectmiki.activity.WelcomeActivity">
-
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/imgWWCodeKL"
-        android:src="@drawable/project_miki_banner"
-        android:contentDescription="Project Miki banner"/>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/btnCamera1"
-        android:src="@drawable/ic_camera_alt_black_48dp" />
+        android:src="@drawable/ic_camera_alt_black_48dp"
+        android:layout_above="@+id/btnBatch1"
+        android:layout_alignLeft="@+id/btnBatch1"
+        android:layout_alignStart="@+id/btnBatch1" />
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/btnBatch1"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
         android:src="@drawable/ic_camera_roll_black_48dp"
         android:visibility="invisible" />
 
@@ -31,6 +28,9 @@
         android:layout_height="wrap_content"
         android:id="@+id/btnGallery1"
         android:src="@drawable/ic_collections_black_48dp"
+        android:layout_below="@+id/btnBatch1"
+        android:layout_alignLeft="@+id/btnBatch1"
+        android:layout_alignStart="@+id/btnBatch1"
         android:clickable="true" />
 
     <CheckBox
@@ -38,6 +38,9 @@
         android:layout_height="wrap_content"
         android:text="Do not show this screen next time."
         android:id="@+id/checkBox"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
         android:checked="false" />
 
     <TextView
@@ -45,13 +48,32 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Select an image from gallery"
-        android:id="@+id/textView" />
+        android:id="@+id/textView"
+        android:layout_alignBottom="@+id/btnGallery1"
+        android:layout_toRightOf="@+id/btnGallery1"
+        android:layout_toEndOf="@+id/btnGallery1" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Take a photo of receipt"
-        android:id="@+id/textView2" />
+        android:id="@+id/textView2"
+        android:layout_alignBottom="@+id/btnCamera1"
+        android:layout_toRightOf="@+id/btnCamera1"
+        android:layout_toEndOf="@+id/btnCamera1" />
 
-</LinearLayout>
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imgWWCodeKL"
+        android:src="@drawable/project_miki_banner"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/btnCamera1"
+        android:contentDescription="Project Miki banner"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+</RelativeLayout>
