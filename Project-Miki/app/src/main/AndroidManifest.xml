@@ -31,6 +31,22 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="wwckl.projectmiki.activity.MainActivity" />
         </activity>
+        <activity
+            android:name=".activity.WelcomeActivity"
+            android:label="@string/app_name"
+            android:parentActivityName=".activity.WelcomeActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="wwckl.projectmiki.activity.WelcomeActivity" />
+        </activity>
+        <activity android:name=".activity.SettingsActivity"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action
+                    android:name="activity.SettingsActivity" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
