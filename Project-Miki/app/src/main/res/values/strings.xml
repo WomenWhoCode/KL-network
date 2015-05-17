@@ -8,6 +8,9 @@
     <string name="treat">Treat</string>
     <string name="share">Share</string>
 
+    <string name="display_welcome">Display Welcome screen</string>
+    <string name="do_not_show_welcome">Do not show this screen next time.</string>
+
     <string name="take_a_photo_receipt">Take a photo of receipt</string>
     <string name="take_multiple_photo_receipt">Take multiple photo of receipt</string>
     <string name="select_image_from_gallery">Select an image from Gallery</string>
