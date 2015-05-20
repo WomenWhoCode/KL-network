@@ -6,11 +6,11 @@
         android:summary="@string/pref_summ_display_welcome"
         android:defaultValue="true" />
     <ListPreference
-        android:key="pref_input_type"
+        android:key="pref_input_method"
         android:title="@string/pref_input_method"
         android:dialogTitle="@string/pref_input_method"
         android:entries="@array/pref_input_method"
-        android:entryValues="@array/pref_input_method"
+        android:entryValues="@array/pref_input_method_values"
         android:defaultValue="@string/pref_input_method_default" />
     <PreferenceCategory android:title="@string/camera">
         <CheckBoxPreference

@@ -24,6 +24,8 @@
 
     <string name="about">About</string>
     <string name="camera">Camera</string>
+    <string name="batch">Batch</string>
+    <string name="gallery">Gallery</string>
     <string name="pref_auto_focus">Auto focus</string>
     <string name="pref_summ_auto_focus">Auto focus ON</string>
     <string name="pref_input_method">Default receipt mode</string>
@@ -33,5 +35,10 @@
         <item name="pref_input_method_camera">Camera</item>
         <item name="pref_input_method_batch">Batch mode camera</item>
         <item name="pref_input_method_gallery">Gallery</item>
+    </string-array>
+    <string-array name="pref_input_method_values">
+        <item name="camera">Camera</item>
+        <item name="batch">Batch</item>
+        <item name="gallery">Gallery</item>
     </string-array>
 </resources>

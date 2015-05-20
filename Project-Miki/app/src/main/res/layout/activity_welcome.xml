@@ -12,7 +12,9 @@
         android:src="@drawable/ic_camera_alt_black_48dp"
         android:layout_above="@+id/btnBatch1"
         android:layout_alignLeft="@+id/btnBatch1"
-        android:layout_alignStart="@+id/btnBatch1" />
+        android:layout_alignStart="@+id/btnBatch1"
+        android:onClick="resultInputMethodSelected"
+        android:clickable="true" />
 
     <ImageButton
         android:layout_width="wrap_content"
@@ -31,7 +33,8 @@
         android:layout_below="@+id/btnBatch1"
         android:layout_alignLeft="@+id/btnBatch1"
         android:layout_alignStart="@+id/btnBatch1"
-        android:clickable="true" />
+        android:clickable="true"
+        android:onClick="resultInputMethodSelected" />
 
     <CheckBox
         android:layout_width="wrap_content"

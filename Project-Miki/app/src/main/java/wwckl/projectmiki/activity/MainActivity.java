@@ -8,26 +8,50 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.TextView;
 
 import wwckl.projectmiki.R;
 
 
 public class MainActivity extends AppCompatActivity {
-    public enum InputMethod { CAMERA, BATCH, GALLERY }
+    final int SELECT_INPUT_METHOD = 1;
+    String inputMethod = "";
+
+    public void testing(String inputString){
+        TextView t = (TextView)findViewById(R.id.textView);
+        t.append(inputString);
+    }
+
+    // returns the selected input method
+    public void getDefaultInputMethod() {
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean displayWelcome = sharedPrefs.getBoolean("pref_display_welcome", true);
+
+        if (displayWelcome) {
+            startWelcomeActivity();
+        }
+        else {
+            inputMethod = sharedPrefs.getString("pref_input_method", getString(R.string.camera));
+        }
+    }
+
+    // display welcome activity and returns with result
+    public void startWelcomeActivity(){
+        Intent selectInputMethodIntent = new Intent(this, WelcomeActivity.class);
+        startActivityForResult(selectInputMethodIntent, SELECT_INPUT_METHOD);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final Button button = (Button) findViewById(R.id.button_next);
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick (View v) {
-                Intent intent = new Intent(MainActivity.this, BillSplitterActivity.class);
-                startActivity(intent);
-            }
-        });
+        // Check to run Welcome Activity
+        // or retrieve default input method
+        if (savedInstanceState == null)
+            getDefaultInputMethod();
+
+        testing(inputMethod);
     }
 
 
@@ -53,5 +77,27 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch(requestCode) {
+            case SELECT_INPUT_METHOD:
+                if (resultCode == RESULT_OK) {
+                    inputMethod = data.getStringExtra("result_input_method");
+                }
+                break;
+            default:
+                // Not the intended intent
+                break;
+        }
+    }
+
+    // onClick of next button
+    public void startBillSplitting(View view){
+        Intent intent = new Intent(this, BillSplitterActivity.class);
+        startActivity(intent);
     }
 }
