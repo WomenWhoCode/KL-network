@@ -39,8 +39,8 @@
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/do_not_show_welcome"
-        android:id="@+id/checkBox"
+        android:text="@string/show_welcome"
+        android:id="@+id/cbShowWelcome"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"

@@ -10,7 +10,7 @@
 
     <string name="pref_display_welcome">Display Welcome screen</string>
     <string name="pref_summ_display_welcome">Display Welcome screen on startup</string>
-    <string name="do_not_show_welcome">Do not show this screen next time.</string>
+    <string name="show_welcome">Show this screen next time.</string>
 
     <string name="take_a_photo_receipt">Take a photo of receipt</string>
     <string name="take_multiple_photo_receipt">Take multiple photo of receipt</string>
