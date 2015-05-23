@@ -2,25 +2,26 @@ package wwckl.projectmiki.activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
+import android.widget.ImageView;
 
 import wwckl.projectmiki.R;
 
 
 public class MainActivity extends AppCompatActivity {
     final int SELECT_INPUT_METHOD = 1;
+    final int RESULT_LOAD_IMAGE = 2;
     String inputMethod = "";
-
-    public void testing(String inputString){
-        TextView t = (TextView)findViewById(R.id.textView);
-        t.append(inputString);
-    }
+    String picturePath = "";
 
     // returns the selected input method
     public void getDefaultInputMethod() {
@@ -37,8 +38,16 @@ public class MainActivity extends AppCompatActivity {
 
     // display welcome activity and returns with result
     public void startWelcomeActivity(){
-        Intent selectInputMethodIntent = new Intent(this, WelcomeActivity.class);
-        startActivityForResult(selectInputMethodIntent, SELECT_INPUT_METHOD);
+        Intent intentInputMethod = new Intent(MainActivity.this, WelcomeActivity.class);
+        startActivityForResult(intentInputMethod, SELECT_INPUT_METHOD);
+    }
+
+    // Select Image from gallery
+    public void startSelectFromGallery(){
+        Intent intentGallery = new Intent(
+                Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+        startActivityForResult(intentGallery, RESULT_LOAD_IMAGE);
     }
 
     @Override
@@ -51,9 +60,10 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null)
             getDefaultInputMethod();
 
-        testing(inputMethod);
+        if(inputMethod.equalsIgnoreCase(getString(R.string.gallery))){
+            startSelectFromGallery();
+        }
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -84,11 +94,35 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch(requestCode) {
+            // Retrieve Result from Welcome Screen
             case SELECT_INPUT_METHOD:
                 if (resultCode == RESULT_OK) {
                     inputMethod = data.getStringExtra("result_input_method");
                 }
                 break;
+
+            // Retrieve Image from Gallery
+            case RESULT_LOAD_IMAGE:
+                if (resultCode == RESULT_OK && data != null) {
+                    Uri selectedImage = data.getData();
+                    String[] filePathColumn = { MediaStore.Images.Media.DATA };
+
+                    Cursor cursor = getContentResolver().query(selectedImage,
+                            filePathColumn, null, null, null);
+                    cursor.moveToFirst();
+
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    picturePath = cursor.getString(columnIndex);
+                    cursor.close();
+
+                    ImageView imageView = (ImageView) findViewById(R.id.imageView);
+                    imageView.setImageBitmap(BitmapFactory.decodeFile(picturePath));
+                }else{
+                    // no image, prompt for input method.
+                    startWelcomeActivity();
+                }
+                break;
+
             default:
                 // Not the intended intent
                 break;
