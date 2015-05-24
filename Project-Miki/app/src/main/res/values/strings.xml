@@ -29,7 +29,8 @@
     <string name="pref_auto_focus">Auto focus</string>
     <string name="pref_summ_auto_focus">Auto focus ON</string>
     <string name="pref_input_method">Default receipt mode</string>
-    <string name="pref_input_method_default">Gallery</string>
+    <string name="rotate_left">Rotate left</string>
+    <string name="rotate_right">Rotate right</string>
 
     <string-array name="pref_input_method">
         <item name="pref_input_method_camera">Camera</item>

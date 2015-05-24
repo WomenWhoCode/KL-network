@@ -38,11 +38,19 @@ public class WelcomeActivity extends AppCompatActivity {
         }
     }
 
-    private void savePreferences(String key, boolean value) {
+    private void savePreferencesBool(String key, boolean value) {
         SharedPreferences sharedPreferences = PreferenceManager
                 .getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.putBoolean(key, value);
+        editor.apply();
+    }
+
+    private void savePreferencesString(String key, String value) {
+        SharedPreferences sharedPreferences = PreferenceManager
+                .getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(key, value);
         editor.apply();
     }
 
@@ -55,40 +63,40 @@ public class WelcomeActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected (MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            Intent settingsIntent = new Intent(this, SettingsActivity.class);
-            startActivity(settingsIntent);
-            return true;
+        // Action bar menu.
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                Intent settingsIntent = new Intent(this, SettingsActivity.class);
+                startActivity(settingsIntent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
     public void resultInputMethodSelected(View view){
         // Save preference of check box value.
-        savePreferences("pref_display_welcome", checkBoxShowWelcome.isChecked());
+        savePreferencesBool("pref_display_welcome", checkBoxShowWelcome.isChecked());
 
         Intent returnIntent = new Intent();
+        String inputMethod = "";
 
         // return the selected input Method to Main activity
         switch (view.getId()) {
             case R.id.btnBatch1:
-                returnIntent.putExtra("result_input_method", getString(R.string.batch));
+                inputMethod = getString(R.string.batch);
                 break;
             case R.id.btnCamera1:
-                returnIntent.putExtra("result_input_method", getString(R.string.camera));
+                inputMethod = getString(R.string.camera);
                 break;
             case R.id.btnGallery1:
-                returnIntent.putExtra("result_input_method", getString(R.string.gallery));
+                inputMethod = getString(R.string.gallery);
                 break;
         }
 
+        savePreferencesString("pref_input_method", inputMethod);
+
+        returnIntent.putExtra("result_input_method", inputMethod);
         setResult(RESULT_OK, returnIntent);
         finish();
     }

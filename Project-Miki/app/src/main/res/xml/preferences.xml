@@ -11,7 +11,7 @@
         android:dialogTitle="@string/pref_input_method"
         android:entries="@array/pref_input_method"
         android:entryValues="@array/pref_input_method_values"
-        android:defaultValue="@string/pref_input_method_default" />
+        android:defaultValue="@string/gallery" />
     <PreferenceCategory android:title="@string/camera">
         <CheckBoxPreference
             android:key="pref_auto_focus"

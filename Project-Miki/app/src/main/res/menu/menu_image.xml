@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
+    <item android:id="@+id/rotate_left"
+        android:icon="@drawable/ic_rotate_left_black_24dp"
+        android:title="@string/rotate_left"
+        app:showAsAction="ifRoom|withText"/>
+    <item android:id="@+id/rotate_right"
+        android:icon="@drawable/ic_rotate_right_black_24dp"
+        android:title="@string/rotate_right"
+        app:showAsAction="ifRoom|withText"/>
+</menu>
