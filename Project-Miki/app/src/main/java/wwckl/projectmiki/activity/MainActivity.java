@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,6 +26,7 @@ import wwckl.projectmiki.R;
 public class MainActivity extends AppCompatActivity {
     final int SELECT_INPUT_METHOD = 1;
     final int RESULT_LOAD_IMAGE = 2;
+    final int RESULT_IMAGE_CAPTURE = 3;
     String inputMethod = "";
     String picturePath = "";
     ActionMode mActionMode = null;
@@ -48,36 +50,43 @@ public class MainActivity extends AppCompatActivity {
     // retrieves the receipt image
     public void getReceiptImage() {
         // Retrieve image
-        if (inputMethod.equalsIgnoreCase(getString(R.string.gallery))){
+        if (inputMethod.equalsIgnoreCase(getString(R.string.gallery))) {
             startSelectFromGallery();
-        }else {
-            testing(" getReceiptImage not gallery");
+        }
+        else if (inputMethod.equalsIgnoreCase(getString(R.string.camera))) {
+            startImageCapture();
+        }
+        else {
+            Log.d("getReceiptImage", "NOT gallery or camera.");
         }
     }
 
     // display welcome activity and returns with result
-    public void startWelcomeActivity(){
+    public void startWelcomeActivity() {
         Intent intentInputMethod = new Intent(MainActivity.this, WelcomeActivity.class);
         startActivityForResult(intentInputMethod, SELECT_INPUT_METHOD);
     }
 
     // Select Image from gallery
-    public void startSelectFromGallery(){
+    public void startSelectFromGallery() {
         Intent intentGallery = new Intent(
                 Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 
         startActivityForResult(intentGallery, RESULT_LOAD_IMAGE);
     }
 
+    // Take a photo using Camera
+    public void startImageCapture() {
+        Intent intentCamera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        // start the image capture Intent
+        startActivityForResult(intentCamera, RESULT_IMAGE_CAPTURE);
+    }
+
     // onClick of next button
     public void startBillSplitting(View view){
         Intent intent = new Intent(this, BillSplitterActivity.class);
         startActivity(intent);
-    }
-
-    public void testing(String inputString){
-        TextView t = (TextView)findViewById(R.id.textView);
-        t.append(inputString);
     }
 
     public static Bitmap RotateBitmap(Bitmap source, float angle) {
@@ -149,6 +158,8 @@ public class MainActivity extends AppCompatActivity {
                 startSelectFromGallery();
                 return true;
             case R.id.action_camera:
+                startImageCapture();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -163,7 +174,8 @@ public class MainActivity extends AppCompatActivity {
             case SELECT_INPUT_METHOD:
                 if (resultCode == RESULT_OK) {
                     inputMethod = data.getStringExtra("result_input_method");
-                }else {
+                }
+                else {
                     SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
                     inputMethod = sharedPrefs.getString("pref_input_method", getString(R.string.gallery));
                 }
@@ -173,6 +185,7 @@ public class MainActivity extends AppCompatActivity {
 
             // Retrieve Image from Gallery
             case RESULT_LOAD_IMAGE:
+            case RESULT_IMAGE_CAPTURE:
                 if (resultCode == RESULT_OK && data != null) {
                     Uri selectedImage = data.getData();
                     String[] filePathColumn = { MediaStore.Images.Media.DATA };
@@ -188,8 +201,6 @@ public class MainActivity extends AppCompatActivity {
                     receiptImage = BitmapFactory.decodeFile(picturePath);
                     ImageView imageView = (ImageView) findViewById(R.id.imageView);
                     imageView.setImageBitmap(receiptImage);
-                }else{
-                    testing(" result_load_image");
                 }
                 break;
 
