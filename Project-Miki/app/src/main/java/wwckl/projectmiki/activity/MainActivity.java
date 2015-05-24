@@ -39,7 +39,9 @@ public class MainActivity extends AppCompatActivity {
             startWelcomeActivity();
         }
         else {
-            inputMethod = sharedPrefs.getString("pref_input_method", "");
+            inputMethod = sharedPrefs.getString("pref_input_method", getString(R.string.gallery));
+            // Get receipt image based on selected/default input method.
+            getReceiptImage();
         }
     }
 
@@ -110,18 +112,22 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             getDefaultInputMethod();
         }
-
-        testing(" onCreate");
     }
 
     @Override
     public void onResume() {
         super.onResume();  // Always call the superclass method first
-        // Visible/ Active activities.
-        if(picturePath.isEmpty())
-            getReceiptImage();
-        else
-          testing(picturePath);
+
+        TextView t = (TextView)findViewById(R.id.textView);
+        // Prompt user to Get image of receipt
+        if(picturePath.isEmpty()){
+            t.setText(getString(R.string.take_a_photo_receipt)
+                    +"\n or \n"
+                    +getString(R.string.select_image_from_gallery));
+        }
+        else{
+            t.setVisibility(View.INVISIBLE);
+        }
     }
 
     @Override
@@ -139,6 +145,10 @@ public class MainActivity extends AppCompatActivity {
                 Intent settingsIntent = new Intent(this, SettingsActivity.class);
                 startActivity(settingsIntent);
                 return true;
+            case R.id.action_gallery:
+                startSelectFromGallery();
+                return true;
+            case R.id.action_camera:
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -155,8 +165,10 @@ public class MainActivity extends AppCompatActivity {
                     inputMethod = data.getStringExtra("result_input_method");
                 }else {
                     SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-                    inputMethod = sharedPrefs.getString("pref_input_method", "default3");
+                    inputMethod = sharedPrefs.getString("pref_input_method", getString(R.string.gallery));
                 }
+                // Get receipt image based on selected/default input method.
+                getReceiptImage();
                 break;
 
             // Retrieve Image from Gallery
