@@ -21,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import wwckl.projectmiki.R;
+import wwckl.projectmiki.models.Receipt;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -85,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
     // onClick of next button
     public void startBillSplitting(View view){
+        Receipt.receiptBitmap = receiptImage;
         Intent intent = new Intent(this, BillSplitterActivity.class);
         startActivity(intent);
     }

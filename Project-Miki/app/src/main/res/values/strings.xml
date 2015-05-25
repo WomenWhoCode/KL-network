@@ -18,6 +18,7 @@
 
     <string name="title_activity_bill_splitter">BillSplitterActivity</string>
     <string name="receipt">Receipt</string>
+    <string name="cleaning_image">Cleaning image</string>
 
     <string name="title_section1">Section 1</string>
     <string name="title_section2">Section 2</string>

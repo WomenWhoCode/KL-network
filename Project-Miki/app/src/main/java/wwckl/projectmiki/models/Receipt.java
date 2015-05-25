@@ -1,5 +1,7 @@
 package wwckl.projectmiki.models;
 
+import android.graphics.Bitmap;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +14,8 @@ import java.util.Map;
  * TODO: Replace all uses of this class before publishing your app.
  */
 public class Receipt {
+    // Receipt image
+    public static Bitmap receiptBitmap = null;
 
     /**
      * An array of receipt items.
@@ -35,3 +39,4 @@ public class Receipt {
         ITEM_MAP.put(item.getId(), item);
     }
 }
+
