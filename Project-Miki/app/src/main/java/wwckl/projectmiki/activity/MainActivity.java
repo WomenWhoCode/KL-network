@@ -67,7 +67,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Check to run Welcome Activity
         // or retrieve default input method
-        initImageSelector();
+        if (savedInstanceState == null) {
+            initImageSelector();
+        }
     }
 
     private void initImageSelector () {
@@ -97,8 +99,8 @@ public class MainActivity extends AppCompatActivity {
         // Prompt user to Get image of receipt
         mTextView.setVisibility(View.VISIBLE);
         mTextView.setText(getString(R.string.take_a_photo_receipt)
-                          + "\n or \n"
-                          + getString(R.string.select_image_from_gallery));
+                + "\n or \n"
+                + getString(R.string.select_image_from_gallery));
     }
 
 
@@ -186,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (mImageSelector.equalsIgnoreCase(getString(R.string.camera))) {
             startCamera();
+            return;
         }
 
         Log.w(LOG_TAG, "Image selector value does not match any path");
@@ -213,12 +216,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void startCamera () {
         Intent intentCamera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        if (intentCamera.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(intentCamera, REQUEST_TAKE_PICTURE);
-        }
-
-        Log.e(LOG_TAG, "Unable to dispatch intent. No supported application available");
+        startActivityForResult(intentCamera, REQUEST_TAKE_PICTURE);
     }
 
     /**
