@@ -5,6 +5,6 @@ package wwckl.projectmiki;
  */
 public final class PreferenceKeys {
 
-    public static final String DISPLAY_WELCOME        = "pref_display_welcome";
-    public static final String DEFAULT_IMAGE_SELECTOR = "pref_input_method";
+    public static final String DISPLAY_WELCOME               = "pref_display_welcome";
+    public static final String DEFAULT_PICTURE_RETRIEVE_MODE = "pref_input_method";
 }

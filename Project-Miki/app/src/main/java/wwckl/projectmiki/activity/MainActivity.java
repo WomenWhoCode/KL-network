@@ -27,9 +27,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private static final int REQUEST_IMAGE_SELECTOR     = 1;
-    private static final int REQUEST_IMAGE_FROM_GALLERY = 2;
-    private static final int REQUEST_TAKE_PICTURE = 3;
+    private static final int REQUEST_PICTURE_RETRIEVAL_PREF = 1;
+    private static final int REQUEST_GALLERY                = 2;
+    private static final int REQUEST_TAKE_PICTURE           = 3;
+
 
     /* Layout controls */
     private ImageView mImageView;
@@ -68,11 +69,11 @@ public class MainActivity extends AppCompatActivity {
         // Check to run Welcome Activity
         // or retrieve default input method
         if (savedInstanceState == null) {
-            initImageSelector();
+            getDefaultOrRetrievePicture();
         }
     }
 
-    private void initImageSelector () {
+    private void getDefaultOrRetrievePicture () {
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         boolean displayWelcome = sharedPrefs.getBoolean(PreferenceKeys.DISPLAY_WELCOME, true);
 
@@ -81,10 +82,9 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        mImageSelector = sharedPrefs.getString(PreferenceKeys.DEFAULT_IMAGE_SELECTOR, getString(R.string.gallery));
-
-        // Get receipt image based on selected/default input method.
-        showImageSelector();
+        mImageSelector = sharedPrefs.getString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, getString(R.string.gallery));
+        // Get receipt picture based on selected/default input method.
+        retrievePicture();
     }
 
     @Override
@@ -96,11 +96,11 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // Prompt user to Get image of receipt
+        // Prompt user to Get picture of receipt
         mTextView.setVisibility(View.VISIBLE);
         mTextView.setText(getString(R.string.take_a_photo_receipt)
-                + "\n or \n"
-                + getString(R.string.select_image_from_gallery));
+                          + "\n or \n"
+                          + getString(R.string.select_image_from_gallery));
     }
 
 
@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(settingsIntent);
                 return true;
             case R.id.action_gallery:
-                startGalleryPicker();
+                startGallery();
                 return true;
             case R.id.action_camera:
                 startCamera();
@@ -143,21 +143,26 @@ public class MainActivity extends AppCompatActivity {
 
         switch (requestCode) {
             // Retrieve Result from Welcome Screen
-            case REQUEST_IMAGE_SELECTOR:
+            case REQUEST_PICTURE_RETRIEVAL_PREF:
                 mImageSelector = data.getStringExtra("result_input_method");
-                showImageSelector();
+                retrievePicture();
                 return;
 
             // retrieve image from camera or gallery
             case REQUEST_TAKE_PICTURE:
-            case REQUEST_IMAGE_FROM_GALLERY:
+            case REQUEST_GALLERY:
                 if (data == null) {
                     return;
                 }
 
                 Uri selectedImage = data.getData();
-                String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
+                if (selectedImage == null) {
+                    Log.w(LOG_TAG, "Unable to retrieve picture");
+                    return;
+                }
+
+                String[] filePathColumn = {MediaStore.Images.Media.DATA};
                 Cursor cursor = getContentResolver().query(selectedImage,
                                                            filePathColumn, null, null, null);
                 cursor.moveToFirst();
@@ -179,10 +184,10 @@ public class MainActivity extends AppCompatActivity {
      * Show either gallery or camera to select/capture the receipt image
      * This is based on what user has chosen as their default image selector
      */
-    public void showImageSelector () {
+    public void retrievePicture () {
         // Retrieve image
         if (mImageSelector.equalsIgnoreCase(getString(R.string.gallery))) {
-            startGalleryPicker();
+            startGallery();
             return;
         }
 
@@ -200,15 +205,15 @@ public class MainActivity extends AppCompatActivity {
      */
     public void startWelcomeActivity() {
         Intent intentWelcomeActivity = new Intent(MainActivity.this, WelcomeActivity.class);
-        startActivityForResult(intentWelcomeActivity, REQUEST_IMAGE_SELECTOR);
+        startActivityForResult(intentWelcomeActivity, REQUEST_PICTURE_RETRIEVAL_PREF);
     }
 
     /**
      * Show available gallery picker on user device to select the receipt image
      */
-    private void startGalleryPicker () {
+    private void startGallery () {
         Intent intentGallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        startActivityForResult(intentGallery, REQUEST_IMAGE_FROM_GALLERY);
+        startActivityForResult(intentGallery, REQUEST_GALLERY);
     }
 
     /**

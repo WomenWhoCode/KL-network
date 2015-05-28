@@ -15,14 +15,14 @@ import wwckl.projectmiki.R;
 
 public class WelcomeActivity extends AppCompatActivity {
 
-    private CheckBox mChkBoxShowWelcome;
+    private CheckBox mCheckBoxShowWelcome;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
 
-        mChkBoxShowWelcome = (CheckBox) findViewById(R.id.cbShowWelcome);
+        mCheckBoxShowWelcome = (CheckBox) findViewById(R.id.cbShowWelcome);
         loadSavedPreferences();
     }
 
@@ -34,7 +34,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 .getDefaultSharedPreferences(this);
 
         boolean checkBoxValue = sharedPreferences.getBoolean(PreferenceKeys.DISPLAY_WELCOME, true);
-        mChkBoxShowWelcome.setChecked(checkBoxValue);
+        mCheckBoxShowWelcome.setChecked(checkBoxValue);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     /**
-     * Save user preference
+     * Save user preference for boolean type
      * @param key Preference Key
      * @param value The value of the preference
      */
@@ -84,34 +84,34 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     /***
-     * Save user preferred image selector to SharedPreference
+     * Save user preferred picture mode to SharedPreferences
      * and returns back to the parent activity
      *
      * @param view
      */
-    public void saveImageSelector (View view){
+    public void savePictureMode (View view){
         // Save preference of check box value.
-        savePreferencesBool(PreferenceKeys.DISPLAY_WELCOME, mChkBoxShowWelcome.isChecked());
+        savePreferencesBool(PreferenceKeys.DISPLAY_WELCOME, mCheckBoxShowWelcome.isChecked());
 
         Intent returnIntent = new Intent();
-        String imageSelector = "";
+        String pictureMode = "";
 
         // return the selected input Method to Main activity
         switch (view.getId()) {
             case R.id.btnBatch1:
-                imageSelector = getString(R.string.batch);
+                pictureMode = getString(R.string.batch);
                 break;
             case R.id.btnCamera1:
-                imageSelector = getString(R.string.camera);
+                pictureMode = getString(R.string.camera);
                 break;
             case R.id.btnGallery1:
-                imageSelector = getString(R.string.gallery);
+                pictureMode = getString(R.string.gallery);
                 break;
         }
 
-        savePreferencesString(PreferenceKeys.DEFAULT_IMAGE_SELECTOR, imageSelector);
+        savePreferencesString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, pictureMode);
 
-        returnIntent.putExtra("result_input_method", imageSelector);
+        returnIntent.putExtra("result_input_method", pictureMode);
         setResult(RESULT_OK, returnIntent);
         finish();
     }
