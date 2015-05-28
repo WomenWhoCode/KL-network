@@ -7,7 +7,7 @@ import wwckl.projectmiki.fragment.SettingsFragment;
 
 /**
  * Created by Aryn on 5/17/15.
- * To accomodate user preferences.
+ * To accommodate user preferences.
  */
 public class SettingsActivity extends FragmentActivity {
     @Override
