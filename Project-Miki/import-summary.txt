@@ -9,34 +9,8 @@ so manually move them:
 
 * .DS_Store
 * .gitignore
-* .idea/
-* .idea/.name
-* .idea/compiler.xml
-* .idea/copyright/
-* .idea/copyright/profiles_settings.xml
-* .idea/dictionaries/
-* .idea/dictionaries/lydialim.xml
-* .idea/encodings.xml
-* .idea/misc.xml
-* .idea/modules.xml
-* .idea/scopes/
-* .idea/scopes/scope_settings.xml
-* .idea/tess-two.iml
-* .idea/vcs.xml
-* .idea/workspace.xml
 * COPYING
 * build.xml
-* output/
-* output/.DS_Store
-* output/com/
-* output/com/.DS_Store
-* output/com/googlecode/
-* output/com/googlecode/.DS_Store
-* output/com/googlecode/tesseract/
-* output/com/googlecode/tesseract/.DS_Store
-* output/com/googlecode/tesseract/android/
-* output/com/googlecode/tesseract/android/BuildConfig.class
-* proguard-project.txt
 
 Moved Files:
 ------------
@@ -47,8 +21,6 @@ Eclipse projects. Here's how the projects were restructured:
 * jni/ => tess-two/src/main/jni/
 * libs/armeabi-v7a/liblept.so => tess-two/src/main/jniLibs/armeabi-v7a/liblept.so
 * libs/armeabi-v7a/libtess.so => tess-two/src/main/jniLibs/armeabi-v7a/libtess.so
-* libs/armeabi/liblept.so => tess-two/src/main/jniLibs/armeabi/liblept.so
-* libs/armeabi/libtess.so => tess-two/src/main/jniLibs/armeabi/libtess.so
 * libs/mips/liblept.so => tess-two/src/main/jniLibs/mips/liblept.so
 * libs/mips/libtess.so => tess-two/src/main/jniLibs/mips/libtess.so
 * libs/x86/liblept.so => tess-two/src/main/jniLibs/x86/liblept.so

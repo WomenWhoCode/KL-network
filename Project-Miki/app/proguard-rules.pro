@@ -15,3 +15,7 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+-keep class com.googlecode.tesseract.android.TessBaseAPI {
+    private long mNativeData;
+}

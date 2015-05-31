@@ -21,8 +21,8 @@ import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.util.Log;
 
-import com.googlecode.leptonica.android.Pixa;
 import com.googlecode.leptonica.android.Pix;
+import com.googlecode.leptonica.android.Pixa;
 import com.googlecode.leptonica.android.ReadFile;
 
 import java.io.File;
@@ -483,7 +483,7 @@ public class TessBaseAPI {
         // Trim because the text will have extra line breaks at the end
         String text = nativeGetUTF8Text();
 
-        return text.trim();
+        return text != null ? text.trim() : null;
     }
 
     /**

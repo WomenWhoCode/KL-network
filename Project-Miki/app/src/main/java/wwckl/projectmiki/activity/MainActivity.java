@@ -1,12 +1,12 @@
 package wwckl.projectmiki.activity;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -20,8 +20,13 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.IOException;
+
 import wwckl.projectmiki.PreferenceKeys;
 import wwckl.projectmiki.R;
+import wwckl.projectmiki.asyncTask.OcrAsyncTask;
+import wwckl.projectmiki.utils.PictureUtil;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,15 +36,20 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_GALLERY                = 2;
     private static final int REQUEST_TAKE_PICTURE           = 3;
 
-
     /* Layout controls */
     private ImageView mImageView;
     private TextView  mTextView;
 
-    private String     mImageSelector = "";
-    private String     mPicturePath   = "";
-    private ActionMode mActionMode    = null;
-    private Bitmap     mReceiptImage  = null;
+    private ActionMode                      mActionMode;
+    private Bitmap                          mReceiptImage;
+    private RotatePictureActionModeCallback mActionModeCallback;
+
+    private String mPictureRetrievalPref = "";
+    private String mPicturePath          = "";
+
+    private Uri mPictureUri; // file url to store image/video
+
+    private OcrAsyncTask mOcrAsyncTask;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -47,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Load layout for this activity
         setContentView(R.layout.activity_main);
+
+        mActionModeCallback = new RotatePictureActionModeCallback();
 
         mTextView = (TextView) findViewById(R.id.textView);
 
@@ -82,16 +94,16 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        mImageSelector = sharedPrefs.getString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, getString(R.string.gallery));
+        mPictureRetrievalPref = sharedPrefs.getString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, getString(R.string.gallery));
         // Get receipt picture based on selected/default input method.
         retrievePicture();
     }
 
     @Override
-    public void onResume() {
+    public void onResume () {
         super.onResume();  // Always call the superclass method first
 
-        if (!mPicturePath.isEmpty()) {
+        if (mPictureUri != null) {
             mTextView.setVisibility(View.GONE);
             return;
         }
@@ -103,16 +115,26 @@ public class MainActivity extends AppCompatActivity {
                           + getString(R.string.select_image_from_gallery));
     }
 
+    @Override
+    protected void onDestroy () {
+
+        // terminate any running tasks
+        if (mOcrAsyncTask != null && mOcrAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+            mOcrAsyncTask.cancel(true);
+        }
+
+        super.onDestroy();
+    }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu (Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected (MenuItem item) {
         // Action bar menu.
         switch (item.getItemId()) {
             case R.id.action_settings:
@@ -131,7 +153,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onSaveInstanceState (Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        // save file url in bundle as it will be null on screen orientation changes
+        outState.putParcelable("picture_uri", mPictureUri);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        // get the file url
+        mPictureUri = savedInstanceState.getParcelable("picture_uri");
+    }
+
+    @Override
+    protected void onActivityResult (int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (resultCode != RESULT_OK) {
@@ -144,35 +182,24 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             // Retrieve Result from Welcome Screen
             case REQUEST_PICTURE_RETRIEVAL_PREF:
-                mImageSelector = data.getStringExtra("result_input_method");
+                mPictureRetrievalPref = data.getStringExtra("result_input_method");
                 retrievePicture();
                 return;
 
             // retrieve image from camera or gallery
             case REQUEST_TAKE_PICTURE:
             case REQUEST_GALLERY:
-                if (data == null) {
+                if (mPictureUri == null) {
+                    showAlert("Picture path not found");
                     return;
                 }
 
-                Uri selectedImage = data.getData();
-
-                if (selectedImage == null) {
-                    Log.w(LOG_TAG, "Unable to retrieve picture");
-                    return;
-                }
-
-                String[] filePathColumn = {MediaStore.Images.Media.DATA};
-                Cursor cursor = getContentResolver().query(selectedImage,
-                                                           filePathColumn, null, null, null);
-                cursor.moveToFirst();
-
-                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                mPicturePath = cursor.getString(columnIndex);
-                cursor.close();
-
-                mReceiptImage = BitmapFactory.decodeFile(mPicturePath);
+                mReceiptImage = PictureUtil.createBitmap(mPictureUri.getPath());
                 mImageView.setImageBitmap(mReceiptImage);
+
+                mOcrAsyncTask = new OcrAsyncTask(this);
+                mOcrAsyncTask.execute(mReceiptImage);
+
                 return;
 
             default:
@@ -186,24 +213,24 @@ public class MainActivity extends AppCompatActivity {
      */
     public void retrievePicture () {
         // Retrieve image
-        if (mImageSelector.equalsIgnoreCase(getString(R.string.gallery))) {
+        if (mPictureRetrievalPref.equalsIgnoreCase(getString(R.string.gallery))) {
             startGallery();
             return;
         }
 
-        if (mImageSelector.equalsIgnoreCase(getString(R.string.camera))) {
+        if (mPictureRetrievalPref.equalsIgnoreCase(getString(R.string.camera))) {
             startCamera();
             return;
         }
 
-        Log.w(LOG_TAG, "Image selector value does not match any path");
+        Log.d(LOG_TAG, "Image selector value does not match any path");
     }
 
     /**
      * Displays the welcome activity so that user can select the default image selector
      * on the next startup
      */
-    public void startWelcomeActivity() {
+    public void startWelcomeActivity () {
         Intent intentWelcomeActivity = new Intent(MainActivity.this, WelcomeActivity.class);
         startActivityForResult(intentWelcomeActivity, REQUEST_PICTURE_RETRIEVAL_PREF);
     }
@@ -220,35 +247,57 @@ public class MainActivity extends AppCompatActivity {
      * Fires up the device camera so user can take the receipt picture
      */
     private void startCamera () {
+
         Intent intentCamera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        // Create the File where the photo should go
+        File pictureFile = null;
+        try {
+            pictureFile = PictureUtil.createFile();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        mPictureUri = Uri.fromFile(pictureFile);
+        intentCamera.putExtra(MediaStore.EXTRA_OUTPUT, mPictureUri);
         startActivityForResult(intentCamera, REQUEST_TAKE_PICTURE);
     }
 
     /**
      * Display the bill splitting screen where all the maths happens
      */
-    public void startBillSplitting(View view){
-//        Receipt.receiptBitmap = receiptImage;
+    public void startBillSplitting (View view) {
         Intent intent = new Intent(this, BillSplitterActivity.class);
         startActivity(intent);
     }
 
     /**
-     * Rotates the image
-     * @param source The bitmap image that you want to rotate
-     * @param angle Rotation angle
-     * @return Rotated image
+     * Displays an alert dialog
+     *
+     * @param alertMessage The alert message to be shown to the user
      */
-    private Bitmap rotateBitmap (Bitmap source, float angle) {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(angle);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+    private void showAlert (String alertMessage) {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+        alertBuilder.setMessage(alertMessage);
+        alertBuilder.setCancelable(true);
+        alertBuilder.setPositiveButton("Okay",
+                                       new DialogInterface.OnClickListener() {
+                                           public void onClick (DialogInterface dialog, int id) {
+                                               dialog.cancel();
+                                           }
+                                       });
+
+        AlertDialog alert = alertBuilder.create();
+        alert.show();
     }
 
-    // Setting up call backs for Action Bar that will
-    // overlay existing when long click on image
-    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
-
+    /**
+     * Setting up call backs for Action Bar that will
+     * overlay existing when long click on image
+     */
+    private class RotatePictureActionModeCallback implements ActionMode.Callback {
         // Called when the action mode is created; startActionMode() was called
         @Override
         public boolean onCreateActionMode (ActionMode mode, Menu menu) {
@@ -271,13 +320,13 @@ public class MainActivity extends AppCompatActivity {
 
             switch (item.getItemId()) {
                 case R.id.rotate_left:
-                    mReceiptImage = rotateBitmap(mReceiptImage, 270);
+                    mReceiptImage = PictureUtil.rotateBitmap(mReceiptImage, 270);
                     mImageView.setImageBitmap(mReceiptImage);
                     mode.finish(); // Action picked, so close the CAB
                     return true;
 
                 case R.id.rotate_right:
-                    mReceiptImage = rotateBitmap(mReceiptImage, 90);
+                    mReceiptImage = PictureUtil.rotateBitmap(mReceiptImage, 90);
                     mImageView.setImageBitmap(mReceiptImage);
                     mode.finish(); // Action picked, so close the CAB
                     return true;
@@ -292,5 +341,5 @@ public class MainActivity extends AppCompatActivity {
         public void onDestroyActionMode (ActionMode mode) {
             mActionMode = null;
         }
-    };
+    }
 }
