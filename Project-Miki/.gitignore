@@ -1,6 +1,7 @@
 # Template from https://github.com/github/gitignore/blob/master/Android.gitignore
 
 # IntelliJ
+.idea
 /.idea/workspace.xml
 /.idea/libraries
 
@@ -32,5 +33,11 @@ proguard/
 # Log Files
 *.log
 
-# Mac stuff
+# Mac generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

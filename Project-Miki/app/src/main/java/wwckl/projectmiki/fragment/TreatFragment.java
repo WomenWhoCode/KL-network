@@ -47,7 +47,7 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
     public static TreatFragment newInstance (Receipt receipt) {
         TreatFragment fragment = new TreatFragment();
         Bundle args = new Bundle();
-        args.putSerializable(ARG_RECEIPT, receipt);
+        args.putParcelable(ARG_RECEIPT, receipt);
         fragment.setArguments(args);
         fragment.setArguments(args);
         return fragment;
@@ -65,7 +65,7 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            mReceipt = (Receipt) getArguments().getSerializable(ARG_RECEIPT);
+            mReceipt = getArguments().getParcelable(ARG_RECEIPT);
         }
 
         if (mReceipt == null) {

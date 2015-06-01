@@ -25,7 +25,10 @@ import java.io.IOException;
 
 import wwckl.projectmiki.PreferenceKeys;
 import wwckl.projectmiki.R;
+import wwckl.projectmiki.asyncTask.IAsyncTaskListener;
 import wwckl.projectmiki.asyncTask.OcrAsyncTask;
+import wwckl.projectmiki.models.Item;
+import wwckl.projectmiki.models.Receipt;
 import wwckl.projectmiki.utils.PictureUtil;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,16 +43,17 @@ public class MainActivity extends AppCompatActivity {
     private ImageView mImageView;
     private TextView  mTextView;
 
-    private ActionMode                      mActionMode;
-    private Bitmap                          mReceiptImage;
-    private RotatePictureActionModeCallback mActionModeCallback;
+    private ActionMode mActionMode;
+    private Bitmap     mReceiptImage;
 
     private String mPictureRetrievalPref = "";
-    private String mPicturePath          = "";
 
-    private Uri mPictureUri; // file url to store image/video
+    private Uri     mPictureUri; // File url to store image/video
+    private Receipt mReceipt; // orc result
 
-    private OcrAsyncTask mOcrAsyncTask;
+    private OcrAsyncTask                    mOcrAsyncTask;
+    private IAsyncTaskListener              mOcrListener;
+    private RotatePictureActionModeCallback mActionModeCallback;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -61,9 +65,19 @@ public class MainActivity extends AppCompatActivity {
         mActionModeCallback = new RotatePictureActionModeCallback();
 
         mTextView = (TextView) findViewById(R.id.textView);
-
-        // Set up listener for longClick menu for Image
         mImageView = (ImageView) findViewById(R.id.imageView);
+
+        setupListeners();
+
+        // Check to run Welcome Activity
+        // or retrieve default input method
+        if (savedInstanceState == null) {
+            getDefaultOrRetrievePicture();
+        }
+    }
+
+    private void setupListeners () {
+        // Set up listener for longClick menu for Image
         mImageView.setOnLongClickListener(new View.OnLongClickListener() {
             // Called when the user long-clicks on someView
             public boolean onLongClick (View view) {
@@ -78,12 +92,28 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Check to run Welcome Activity
-        // or retrieve default input method
-        if (savedInstanceState == null) {
-            getDefaultOrRetrievePicture();
-        }
+
+        mOcrListener = new IAsyncTaskListener<String>() {
+            @Override
+            public void processOnStart () {
+                // do nothing
+            }
+
+            @Override
+            public void processOnComplete (String result) {
+
+                if (result == null || result.length() < 1) {
+                    showAlert("Unable to process receipt");
+                    return;
+                }
+
+                // create receipt
+                mReceipt = new Receipt();
+                mReceipt.addItem(new Item(1, result));
+            }
+        };
     }
+
 
     private void getDefaultOrRetrievePicture () {
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -161,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    protected void onRestoreInstanceState (Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
 
         // get the file url
@@ -197,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
                 mReceiptImage = PictureUtil.createBitmap(mPictureUri.getPath());
                 mImageView.setImageBitmap(mReceiptImage);
 
-                mOcrAsyncTask = new OcrAsyncTask(this);
+                mOcrAsyncTask = new OcrAsyncTask(this, mOcrListener);
                 mOcrAsyncTask.execute(mReceiptImage);
 
                 return;
@@ -251,12 +281,12 @@ public class MainActivity extends AppCompatActivity {
         Intent intentCamera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         // Create the File where the photo should go
-        File pictureFile = null;
+        File pictureFile;
         try {
             pictureFile = PictureUtil.createFile();
         }
         catch (IOException e) {
-            e.printStackTrace();
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
             return;
         }
 
@@ -269,7 +299,14 @@ public class MainActivity extends AppCompatActivity {
      * Display the bill splitting screen where all the maths happens
      */
     public void startBillSplitting (View view) {
+
+        if (mReceipt == null) {
+            showAlert("Please select a receipt to process");
+            return;
+        }
+
         Intent intent = new Intent(this, BillSplitterActivity.class);
+        intent.putExtra("receipt", mReceipt);
         startActivity(intent);
     }
 

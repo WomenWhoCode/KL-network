@@ -5,6 +5,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import wwckl.projectmiki.R;
 import wwckl.projectmiki.models.Receipt;
@@ -16,12 +17,13 @@ public class DutchFragment extends Fragment {
 
     private static final String ARG_RECEIPT = "receipt";
 
+    private TextView mTextView;
     private Receipt mReceipt;
 
     public static DutchFragment newInstance (Receipt receipt) {
         DutchFragment fragment = new DutchFragment();
         Bundle args = new Bundle();
-        args.putSerializable("receipt", receipt);
+        args.putParcelable(ARG_RECEIPT, receipt);
         fragment.setArguments(args);
         return fragment;
     }
@@ -38,7 +40,7 @@ public class DutchFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            mReceipt = (Receipt) getArguments().getSerializable(ARG_RECEIPT);
+            mReceipt = getArguments().getParcelable(ARG_RECEIPT);
         }
 
         if (mReceipt == null) {
@@ -49,6 +51,14 @@ public class DutchFragment extends Fragment {
     @Override
     public View onCreateView (LayoutInflater inflater, ViewGroup container,
                               Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_dutch, container, false);
+        View view = inflater.inflate(R.layout.fragment_dutch, container, false);
+
+        mTextView = (TextView) view.findViewById(R.id.textView);
+
+        if (mReceipt.getTotalItems() > 0) {
+            mTextView.setText(mReceipt.getItem(0).getName());
+        }
+
+        return view;
     }
 }

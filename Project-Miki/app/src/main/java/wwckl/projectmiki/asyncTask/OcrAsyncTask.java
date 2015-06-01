@@ -22,7 +22,7 @@ import wwckl.projectmiki.views.LoadingView;
 /**
  * Created by lydialim on 5/31/15.
  *
- * Optical character recognition asynchronous task.
+ * Optical Character Recognition asynchronous task.
  * Install the language data required for OCR, initialize the OCR engine
  * and process the image using a background thread
  *
@@ -33,7 +33,7 @@ import wwckl.projectmiki.views.LoadingView;
  *
  * Ref : http://developer.android.com/reference/android/os/AsyncTask.html
  *
- * The code for this class was partially adapted from https://github.com/rmtheis/android-ocr/
+ * The code for this class is partially adapted from https://github.com/rmtheis/android-ocr/
  */
 public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
 
@@ -42,9 +42,10 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
     // Default language - English only for now
     private static final String DEFAULT_LANG = "eng";
 
-    private Activity mActivity;
-    private String   mTessdataLangFileName;
-    private File     mTessdataDir;
+    private Activity                   mActivity;
+    private IAsyncTaskListener<String> mListener;
+    private String                     mTessdataLangFileName;
+    private File                       mTessdataDir;
     private int mEngineMode = TessBaseAPI.OEM_DEFAULT;
 
     /**
@@ -52,16 +53,17 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
      *
      * @param activity The calling activity
      */
-    public OcrAsyncTask (Activity activity) {
+    public OcrAsyncTask (Activity activity, IAsyncTaskListener listener) {
         mActivity = activity;
+        mListener = listener;
 
-        // change this to try a different engine
+        // change this to try a different engine. Use both for best accuracy at the cost of the perf
         mEngineMode = TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED;
 
         mTessdataLangFileName = "tesseract-ocr-3.02." + DEFAULT_LANG + ".zip";
 
-        // FIXME : Look into alternative for lower API
-        mTessdataDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "projectmiki");
+        // Not exactly the right directory... v2 perhaps?
+        mTessdataDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "projectmiki");
     }
 
     @Override
@@ -79,15 +81,18 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
         File trainedDataFile = new File(mTessdataDir + "/tessdata", DEFAULT_LANG + ".traineddata");
         if (!trainedDataFile.exists()) {
             // File does not exist, lets copy from the assets
+            progressMsg = "Preparing language data";
+            publishProgress(progressMsg);
+
             installZipFromAssets(mActivity, mTessdataLangFileName, mTessdataDir);
         }
 
-        // init engine
         progressMsg = "Initializing " + getOcrEngineModeName(mEngineMode) + " OCR engine for " + DEFAULT_LANG + "...";
         publishProgress(progressMsg);
 
         TessBaseAPI baseApi = new TessBaseAPI();
         baseApi.setDebug(true);
+        // init the tesseract engine and this can be quite slow.
         baseApi.init(mTessdataDir.getPath(), DEFAULT_LANG, mEngineMode);
 
         progressMsg = "Processing receipt...";
@@ -100,7 +105,7 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
 
         // clean text
         recognizedText = recognizedText.replaceAll("[^a-zA-Z0-9]+", " ");
-        Log.d(LOG_TAG, recognizedText);
+        Log.v(LOG_TAG, recognizedText);
 
         return recognizedText;
     }
@@ -113,18 +118,26 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
     @Override
     protected void onPreExecute () {
         LoadingView.show(mActivity);
+
+        if (mListener != null) {
+            mListener.processOnStart();
+        }
     }
 
     @Override
     protected void onPostExecute (String result) {
         LoadingView.dismiss(mActivity);
+
+        if (mListener != null) {
+            mListener.processOnComplete(result);
+        }
     }
 
     /**
      * Unzip the given Zip file, located in application assets, into the given
      * destination file.
      *
-     * @param assetFileName Name of the file in assets
+     * @param assetFileName  Name of the file in assets
      * @param destinationDir Directory to save the destination file in
      * @return
      */
@@ -166,7 +179,7 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
                     unzippedSize += count;
                     percentComplete = (int) ((unzippedSize / (long) zippedFileSize) * 100);
                     if (percentComplete > percentCompleteLast) {
-                        publishProgress("Uncompressing data for " + DEFAULT_LANG + "...", percentComplete.toString(), "0");
+                        publishProgress("Uncompressing data for " + DEFAULT_LANG + "..." + percentComplete.toString());
                         percentCompleteLast = percentComplete;
                     }
                 }

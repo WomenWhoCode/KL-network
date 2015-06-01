@@ -26,6 +26,8 @@ import wwckl.projectmiki.models.Receipt;
 public class BillSplitterActivity extends AppCompatActivity implements ActionBar.TabListener,
         TreatFragment.OnFragmentInteractionListener {
 
+    private static final String ARG_RECEIPT = "receipt";
+
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -42,12 +44,17 @@ public class BillSplitterActivity extends AppCompatActivity implements ActionBar
     private ViewPager mViewPager;
 
     // The receipt model, result of the processed receipt from OCR
-    private Receipt mReceipt;
+    private Receipt mReceipt = null;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bill_splitter);
+
+        Bundle bundle = getIntent().getExtras();
+        if (bundle != null) {
+            mReceipt = bundle.getParcelable(ARG_RECEIPT);
+        }
 
         // Set up the action bar.
         final ActionBar actionBar = getSupportActionBar();
