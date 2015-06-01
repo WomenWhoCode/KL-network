@@ -1,24 +1,29 @@
 package wwckl.projectmiki.activity;
 
-import java.util.Locale;
-
 import android.content.Intent;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.os.Bundle;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+
+import java.util.Locale;
 
 import wwckl.projectmiki.R;
 import wwckl.projectmiki.fragment.DutchFragment;
 import wwckl.projectmiki.fragment.TreatFragment;
+import wwckl.projectmiki.models.Receipt;
 
-public class BillSplitterActivity extends ActionBarActivity implements ActionBar.TabListener,
+
+/**
+ * Lyd TODO : Look into obsolete class and replace it
+ */
+public class BillSplitterActivity extends AppCompatActivity implements ActionBar.TabListener,
         TreatFragment.OnFragmentInteractionListener {
 
     /**
@@ -29,12 +34,15 @@ public class BillSplitterActivity extends ActionBarActivity implements ActionBar
      * may be best to switch to a
      * {@link android.support.v4.app.FragmentStatePagerAdapter}.
      */
-    SectionsPagerAdapter mSectionsPagerAdapter;
+    private SectionsPagerAdapter mSectionsPagerAdapter;
 
     /**
      * The {@link ViewPager} that will host the section contents.
      */
-    ViewPager mViewPager;
+    private ViewPager mViewPager;
+
+    // The receipt model, result of the processed receipt from OCR
+    private Receipt mReceipt;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
@@ -131,9 +139,9 @@ public class BillSplitterActivity extends ActionBarActivity implements ActionBar
         public Fragment getItem (int position) {
             switch (position) {
                 case 1:
-                    return TreatFragment.newInstance("test1", "test2");
+                    return TreatFragment.newInstance(mReceipt);
                 default:
-                    return DutchFragment.newInstance();
+                    return DutchFragment.newInstance(mReceipt);
             }
         }
 

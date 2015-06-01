@@ -1,26 +1,49 @@
 package wwckl.projectmiki.fragment;
 
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import wwckl.projectmiki.R;
+import wwckl.projectmiki.models.Receipt;
 
 /**
  * A placeholder fragment containing a simple view.
  */
 public class DutchFragment extends Fragment {
 
-    public static DutchFragment newInstance () {
+    private static final String ARG_RECEIPT = "receipt";
+
+    private Receipt mReceipt;
+
+    public static DutchFragment newInstance (Receipt receipt) {
         DutchFragment fragment = new DutchFragment();
-//        Bundle args = new Bundle();
-//        fragment.setArguments(args);
+        Bundle args = new Bundle();
+        args.putSerializable("receipt", receipt);
+        fragment.setArguments(args);
         return fragment;
     }
 
+    /**
+     * Mandatory empty constructor for the fragment manager to instantiate the
+     * fragment (e.g. upon screen orientation changes).
+     */
     public DutchFragment () {
+    }
+
+    @Override
+    public void onCreate (Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            mReceipt = (Receipt) getArguments().getSerializable(ARG_RECEIPT);
+        }
+
+        if (mReceipt == null) {
+            mReceipt = new Receipt();
+        }
     }
 
     @Override

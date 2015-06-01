@@ -27,14 +27,9 @@ import wwckl.projectmiki.models.Receipt;
  */
 public class TreatFragment extends Fragment implements AbsListView.OnItemClickListener {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private static final String ARG_RECEIPT = "receipt";
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private Receipt mReceipt;
 
     private OnFragmentInteractionListener mListener;
 
@@ -49,12 +44,11 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
      */
     private ListAdapter mAdapter;
 
-    // TODO: Rename and change types of parameters
-    public static TreatFragment newInstance (String param1, String param2) {
+    public static TreatFragment newInstance (Receipt receipt) {
         TreatFragment fragment = new TreatFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putSerializable(ARG_RECEIPT, receipt);
+        fragment.setArguments(args);
         fragment.setArguments(args);
         return fragment;
     }
@@ -71,13 +65,15 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            mReceipt = (Receipt) getArguments().getSerializable(ARG_RECEIPT);
         }
 
-        // TODO: Change Adapter to display your content
+        if (mReceipt == null) {
+            mReceipt = new Receipt();
+        }
+
         mAdapter = new ArrayAdapter<>(getActivity(),
-                                                       android.R.layout.simple_list_item_1, android.R.id.text1, Receipt.ITEMS);
+                                      android.R.layout.simple_list_item_1, android.R.id.text1, mReceipt.getItems());
     }
 
     @Override
@@ -115,11 +111,18 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
 
     @Override
     public void onItemClick (AdapterView<?> parent, View view, int position, long id) {
-        if (null != mListener) {
-            // Notify the active callbacks interface (the activity, if the
-            // fragment is attached to one) that an item has been selected.
-            mListener.onFragmentInteraction(Receipt.ITEMS.get(position).getId());
+        if( mListener == null ) {
+            return;
         }
+
+        Item item = mReceipt.getItem(position);
+        if (item == null) {
+            return;
+        }
+
+        // Notify the active callbacks interface (the activity, if the
+        // fragment is attached to one) that an item has been selected.
+        mListener.onFragmentInteraction(item.getId());
     }
 
     /**

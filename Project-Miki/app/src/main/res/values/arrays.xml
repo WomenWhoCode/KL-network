@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pageSegmentationModes">
+        <item>Auto</item>
+        <item>Auto (no OSD)</item>
+        <item>Single block</item>
+        <item>Single character</item>
+        <item>Single column</item>
+        <item>Single line</item>
+        <item>Single word</item>
+        <item>Vertical block</item>
+        <item>Sparse text</item>
+    </string-array>
+
+    <string-array name="ocrEngineModes">
+        <item>Tesseract</item>
+        <item>Cube</item>
+        <item>Both</item>
+    </string-array>
+</resources>

@@ -98,7 +98,7 @@ public class PictureUtil {
                 bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, false);
             }
 
-            // Tesseract req. ARGB_8888
+            // Convert to ARGB_8888, required by tess
             bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
 
             return bitmap;
