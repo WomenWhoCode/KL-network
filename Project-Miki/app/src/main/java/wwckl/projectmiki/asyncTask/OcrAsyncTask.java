@@ -13,6 +13,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -46,6 +47,7 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
     private IAsyncTaskListener<String> mListener;
     private String                     mTessdataLangFileName;
     private File                       mTessdataDir;
+
     private int mEngineMode = TessBaseAPI.OEM_DEFAULT;
 
     /**
@@ -69,6 +71,9 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
     @Override
     protected String doInBackground (Bitmap... params) {
 
+        // ocr process running time
+        long startTime = System.currentTimeMillis();
+
         String progressMsg = "Checking for data installation...";
         publishProgress(progressMsg);
 
@@ -80,7 +85,7 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
         // check if the traineddata file has been copy
         File trainedDataFile = new File(mTessdataDir + "/tessdata", DEFAULT_LANG + ".traineddata");
         if (!trainedDataFile.exists()) {
-            // File does not exist, lets copy from the assets
+            // File does not exist, lets install the data package from the assets
             progressMsg = "Preparing language data";
             publishProgress(progressMsg);
 
@@ -91,7 +96,7 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
         publishProgress(progressMsg);
 
         TessBaseAPI baseApi = new TessBaseAPI();
-        baseApi.setDebug(true);
+//        baseApi.setDebug(true);
         // init the tesseract engine and this can be quite slow.
         baseApi.init(mTessdataDir.getPath(), DEFAULT_LANG, mEngineMode);
 
@@ -105,6 +110,14 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
 
         // clean text
         recognizedText = recognizedText.replaceAll("[^a-zA-Z0-9]+", " ");
+
+        // ocr process running time
+        long endTime = System.currentTimeMillis();
+        long millis = (endTime - startTime);
+        Log.d(LOG_TAG, "Ocr took " + String.format("%d min, %d sec",
+                                                   TimeUnit.MILLISECONDS.toMinutes(millis),
+                                                   TimeUnit.MILLISECONDS.toSeconds(millis) -
+                                                   TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))));
         Log.v(LOG_TAG, recognizedText);
 
         return recognizedText;
@@ -174,10 +187,12 @@ public class OcrAsyncTask extends AsyncTask<Bitmap, String, String> {
                 Integer percentComplete = 0;
                 Integer percentCompleteLast = 0;
                 byte[] data = new byte[BUFFER];
+
                 while ((count = inputStream.read(data, 0, BUFFER)) != -1) {
                     bufferedOutputStream.write(data, 0, count);
                     unzippedSize += count;
                     percentComplete = (int) ((unzippedSize / (long) zippedFileSize) * 100);
+
                     if (percentComplete > percentCompleteLast) {
                         publishProgress("Uncompressing data for " + DEFAULT_LANG + "..." + percentComplete.toString());
                         percentCompleteLast = percentComplete;

@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     /* Layout controls */
     private ImageView mImageView;
     private TextView  mTextView;
+    private TextView  mTextViewDebug;
 
     private ActionMode mActionMode;
     private Bitmap     mReceiptImage;
@@ -66,13 +67,13 @@ public class MainActivity extends AppCompatActivity {
         mActionModeCallback = new RotatePictureActionModeCallback();
 
         mTextView = (TextView) findViewById(R.id.textView);
+        mTextViewDebug = (TextView) findViewById(R.id.tvDebug);
         mImageView = (ImageView) findViewById(R.id.imageView);
 
         setupListeners();
 
-        // Check to run Welcome Activity
-        // or retrieve default input method
         if (savedInstanceState == null) {
+            // decide which screen to show based on user preference
             getDefaultOrRetrievePicture();
         }
     }
@@ -112,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
                 mReceipt = new Receipt();
                 mReceipt.addItem(new Item(1, result));
 
+                // Display the bill splitting screen where all the maths happens
                 Intent intent = new Intent(getApplicationContext(), BillSplitterActivity.class);
                 intent.putExtra("receipt", mReceipt);
                 startActivity(intent);
@@ -139,9 +141,12 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();  // Always call the superclass method first
 
         if (mPictureUri != null) {
+            mTextViewDebug.setVisibility(View.VISIBLE);
             mTextView.setVisibility(View.GONE);
             return;
         }
+
+        mTextViewDebug.setVisibility(View.GONE);
 
         // Prompt user to Get picture of receipt
         mTextView.setVisibility(View.VISIBLE);
@@ -176,12 +181,15 @@ public class MainActivity extends AppCompatActivity {
                 Intent settingsIntent = new Intent(this, SettingsActivity.class);
                 startActivity(settingsIntent);
                 return true;
+
             case R.id.action_gallery:
                 startGallery();
                 return true;
+
             case R.id.action_camera:
                 startCamera();
                 return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -227,11 +235,11 @@ public class MainActivity extends AppCompatActivity {
                     showAlert("Gallery data not found");
                 }
 
-                String galleryPicturePath = getGalleryPicturePath(data.getData());
-                File pictureFile = new File (galleryPicturePath);
+                String picturePath = getRealPicturePath(data.getData());
+                File pictureFile = new File (picturePath);
                 mPictureUri = Uri.fromFile(pictureFile);
 
-                setSelectedPicture();
+                previewReceipt();
                 return;
 
             case REQUEST_TAKE_PICTURE:
@@ -240,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
 
-                setSelectedPicture();
+                previewReceipt();
                 return;
 
             default:
@@ -248,29 +256,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void setSelectedPicture () {
+    private void previewReceipt () {
+
+        mTextViewDebug.setText("Real Path: " + mPictureUri.getPath());
+
         mReceiptImage = PictureUtil.createBitmap(mPictureUri.getPath());
         mImageView.setImageBitmap(mReceiptImage);
     }
 
     /**
      * Gets the physical picture path
-     * @param contentURI
+     * @param contentUri
      * @return
      */
-    private String getGalleryPicturePath(Uri contentURI) {
+    private String getRealPicturePath (Uri contentUri) {
 
-        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
-        if (cursor == null) {
-            return contentURI.getPath();
+        Cursor cursor = null;
+        try {
+            String[] columns = {MediaStore.Images.Media.DATA};
+            cursor = getContentResolver().query(contentUri, columns, null, null, null);
+
+            int columnIndex = cursor.getColumnIndex(columns[0]);
+            cursor.moveToFirst();
+
+            return cursor.getString(columnIndex);
         }
-
-        cursor.moveToFirst();
-        int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-        String path = cursor.getString(idx);
-        cursor.close();
-
-        return path;
+        finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
     }
 
     /**
@@ -293,8 +308,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Displays the welcome activity so that user can select the default image selector
-     * on the next startup
+     * Displays the welcome activity so that user can select
+     * the default picture selector on the next startup
      */
     public void startWelcomeActivity () {
         Intent intentWelcomeActivity = new Intent(MainActivity.this, WelcomeActivity.class);
@@ -332,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Display the bill splitting screen where all the maths happens
+     * Starts OCR process for the receipt
      */
     public void startOcr (View view) {
 
