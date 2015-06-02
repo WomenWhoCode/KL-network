@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -110,6 +111,10 @@ public class MainActivity extends AppCompatActivity {
                 // create receipt
                 mReceipt = new Receipt();
                 mReceipt.addItem(new Item(1, result));
+
+                Intent intent = new Intent(getApplicationContext(), BillSplitterActivity.class);
+                intent.putExtra("receipt", mReceipt);
+                startActivity(intent);
             }
         };
     }
@@ -124,8 +129,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        mPictureRetrievalPref = sharedPrefs.getString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, getString(R.string.gallery));
         // Get receipt picture based on selected/default input method.
+        mPictureRetrievalPref = sharedPrefs.getString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, getString(R.string.gallery));
         retrievePicture();
     }
 
@@ -217,24 +222,55 @@ public class MainActivity extends AppCompatActivity {
                 return;
 
             // retrieve image from camera or gallery
-            case REQUEST_TAKE_PICTURE:
             case REQUEST_GALLERY:
+                if (data == null || data.getData() == null) {
+                    showAlert("Gallery data not found");
+                }
+
+                String galleryPicturePath = getGalleryPicturePath(data.getData());
+                File pictureFile = new File (galleryPicturePath);
+                mPictureUri = Uri.fromFile(pictureFile);
+
+                setSelectedPicture();
+                return;
+
+            case REQUEST_TAKE_PICTURE:
                 if (mPictureUri == null) {
                     showAlert("Picture path not found");
                     return;
                 }
 
-                mReceiptImage = PictureUtil.createBitmap(mPictureUri.getPath());
-                mImageView.setImageBitmap(mReceiptImage);
-
-                mOcrAsyncTask = new OcrAsyncTask(this, mOcrListener);
-                mOcrAsyncTask.execute(mReceiptImage);
-
+                setSelectedPicture();
                 return;
 
             default:
                 // Not the intended intent
         }
+    }
+
+    private void setSelectedPicture () {
+        mReceiptImage = PictureUtil.createBitmap(mPictureUri.getPath());
+        mImageView.setImageBitmap(mReceiptImage);
+    }
+
+    /**
+     * Gets the physical picture path
+     * @param contentURI
+     * @return
+     */
+    private String getGalleryPicturePath(Uri contentURI) {
+
+        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) {
+            return contentURI.getPath();
+        }
+
+        cursor.moveToFirst();
+        int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+        String path = cursor.getString(idx);
+        cursor.close();
+
+        return path;
     }
 
     /**
@@ -298,16 +334,15 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Display the bill splitting screen where all the maths happens
      */
-    public void startBillSplitting (View view) {
+    public void startOcr (View view) {
 
-        if (mReceipt == null) {
-            showAlert("Please select a receipt to process");
+        // OCR process is running
+        if (mOcrAsyncTask != null && mOcrAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
             return;
         }
 
-        Intent intent = new Intent(this, BillSplitterActivity.class);
-        intent.putExtra("receipt", mReceipt);
-        startActivity(intent);
+        mOcrAsyncTask = new OcrAsyncTask(this, mOcrListener);
+        mOcrAsyncTask.execute(mReceiptImage);
     }
 
     /**

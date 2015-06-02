@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:text="@string/next"
         android:clickable="true"
-        android:onClick="startBillSplitting" />
+        android:onClick="startOcr" />
     </RelativeLayout>
 
 </RelativeLayout>

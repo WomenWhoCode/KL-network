@@ -49,7 +49,6 @@ public class TreatFragment extends Fragment implements AbsListView.OnItemClickLi
         Bundle args = new Bundle();
         args.putParcelable(ARG_RECEIPT, receipt);
         fragment.setArguments(args);
-        fragment.setArguments(args);
         return fragment;
     }
 

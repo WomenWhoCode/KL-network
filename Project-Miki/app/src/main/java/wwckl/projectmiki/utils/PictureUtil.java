@@ -64,6 +64,10 @@ public class PictureUtil {
         options.inSampleSize = 2;
         Bitmap bitmap = BitmapFactory.decodeFile(picturePath, options);
 
+        if (bitmap == null) {
+            return null;
+        }
+
         try {
             ExifInterface exif = new ExifInterface(picturePath);
             int exifOrientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
