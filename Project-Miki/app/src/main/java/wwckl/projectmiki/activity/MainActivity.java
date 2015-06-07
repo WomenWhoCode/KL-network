@@ -1,12 +1,13 @@
 package wwckl.projectmiki.activity;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -20,205 +21,373 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import wwckl.projectmiki.R;
-import wwckl.projectmiki.models.Receipt;
+import java.io.File;
+import java.io.IOException;
 
+import wwckl.projectmiki.PreferenceKeys;
+import wwckl.projectmiki.R;
+import wwckl.projectmiki.asyncTask.IAsyncTaskListener;
+import wwckl.projectmiki.asyncTask.OcrAsyncTask;
+import wwckl.projectmiki.models.Item;
+import wwckl.projectmiki.models.Receipt;
+import wwckl.projectmiki.utils.PictureUtil;
 
 public class MainActivity extends AppCompatActivity {
-    final int SELECT_INPUT_METHOD = 1;
-    final int RESULT_LOAD_IMAGE = 2;
-    final int RESULT_IMAGE_CAPTURE = 3;
-    String inputMethod = "";
-    String picturePath = "";
-    ActionMode mActionMode = null;
-    Bitmap receiptImage = null;
 
-    // retrieves the selected input method
-    public void getDefaultInputMethod() {
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean displayWelcome = sharedPrefs.getBoolean("pref_display_welcome", true);
+    private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-        if (displayWelcome) {
-            startWelcomeActivity();
-        }
-        else {
-            inputMethod = sharedPrefs.getString("pref_input_method", getString(R.string.gallery));
-            // Get receipt image based on selected/default input method.
-            getReceiptImage();
-        }
-    }
+    private static final int REQUEST_PICTURE_RETRIEVAL_PREF = 1;
+    private static final int REQUEST_GALLERY                = 2;
+    private static final int REQUEST_TAKE_PICTURE           = 3;
 
-    // retrieves the receipt image
-    public void getReceiptImage() {
-        // Retrieve image
-        if (inputMethod.equalsIgnoreCase(getString(R.string.gallery))) {
-            startSelectFromGallery();
-        }
-        else if (inputMethod.equalsIgnoreCase(getString(R.string.camera))) {
-            startImageCapture();
-        }
-        else {
-            Log.d("getReceiptImage", "NOT gallery or camera.");
-        }
-    }
+    /* Layout controls */
+    private ImageView mImageView;
+    private TextView  mTextView;
+    private TextView  mTextViewDebug;
 
-    // display welcome activity and returns with result
-    public void startWelcomeActivity() {
-        Intent intentInputMethod = new Intent(MainActivity.this, WelcomeActivity.class);
-        startActivityForResult(intentInputMethod, SELECT_INPUT_METHOD);
-    }
+    private ActionMode mActionMode;
+    private Bitmap     mReceiptImage;
 
-    // Select Image from gallery
-    public void startSelectFromGallery() {
-        Intent intentGallery = new Intent(
-                Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+    private String mPictureRetrievalPref = "";
 
-        startActivityForResult(intentGallery, RESULT_LOAD_IMAGE);
-    }
+    private Uri     mPictureUri; // File url to store image/video
+    private Receipt mReceipt; // orc result
 
-    // Take a photo using Camera
-    public void startImageCapture() {
-        Intent intentCamera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        // start the image capture Intent
-        startActivityForResult(intentCamera, RESULT_IMAGE_CAPTURE);
-    }
-
-    // onClick of next button
-    public void startBillSplitting(View view){
-        Receipt.receiptBitmap = receiptImage;
-        //Intent intent = new Intent(this, BillSplitterActivity.class);
-        //startActivity(intent);
-    }
-
-    public static Bitmap RotateBitmap(Bitmap source, float angle) {
-        Matrix matrix = new Matrix();
-        matrix.postRotate(angle);
-        return Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
-    }
+    private OcrAsyncTask                    mOcrAsyncTask;
+    private IAsyncTaskListener              mOcrListener;
+    private RotatePictureActionModeCallback mActionModeCallback;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Load layout for this activity
         setContentView(R.layout.activity_main);
 
+        mActionModeCallback = new RotatePictureActionModeCallback();
+
+        mTextView = (TextView) findViewById(R.id.textView);
+        mTextViewDebug = (TextView) findViewById(R.id.tvDebug);
+        mImageView = (ImageView) findViewById(R.id.imageView);
+
+        setupListeners();
+
+        if (savedInstanceState == null) {
+            // decide which screen to show based on user preference
+            getDefaultOrRetrievePicture();
+        }
+    }
+
+    private void setupListeners () {
         // Set up listener for longClick menu for Image
-        ImageView imageView = (ImageView) findViewById(R.id.imageView);
-        imageView.setOnLongClickListener(new View.OnLongClickListener() {
+        mImageView.setOnLongClickListener(new View.OnLongClickListener() {
             // Called when the user long-clicks on someView
-            public boolean onLongClick(View view) {
+            public boolean onLongClick (View view) {
                 if (mActionMode != null) {
                     return false;
                 }
 
                 // Start the CAB using the ActionMode.Callback defined above
-                mActionMode = MainActivity.this.startActionMode(mActionModeCallback);
+                mActionMode = startActionMode(mActionModeCallback);
                 view.setSelected(true);
                 return true;
             }
         });
 
-        // Check to run Welcome Activity
-        // or retrieve default input method
-        if (savedInstanceState == null) {
-            getDefaultInputMethod();
+
+        mOcrListener = new IAsyncTaskListener<String>() {
+            @Override
+            public void processOnStart () {
+                // do nothing
+            }
+
+            @Override
+            public void processOnComplete (String result) {
+
+                if (result == null || result.length() < 1) {
+                    showAlert("Unable to process receipt");
+                    return;
+                }
+
+                // create receipt
+                mReceipt = new Receipt();
+                mReceipt.addItem(new Item(1, result));
+
+                // Display the bill splitting screen where all the maths happens
+                Intent intent = new Intent(getApplicationContext(), BillSplitterActivity.class);
+                intent.putExtra("receipt", mReceipt);
+                startActivity(intent);
+            }
+        };
+    }
+
+
+    private void getDefaultOrRetrievePicture () {
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean displayWelcome = sharedPrefs.getBoolean(PreferenceKeys.DISPLAY_WELCOME, true);
+
+        if (displayWelcome) {
+            startWelcomeActivity();
+            return;
         }
+
+        // Get receipt picture based on selected/default input method.
+        mPictureRetrievalPref = sharedPrefs.getString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, getString(R.string.gallery));
+        retrievePicture();
     }
 
     @Override
-    public void onResume() {
+    public void onResume () {
         super.onResume();  // Always call the superclass method first
 
-        TextView t = (TextView)findViewById(R.id.textView);
-        // Prompt user to Get image of receipt
-        if(picturePath.isEmpty()){
-            t.setText(getString(R.string.take_a_photo_receipt)
-                    +"\n or \n"
-                    +getString(R.string.select_image_from_gallery));
+        if (mPictureUri != null) {
+            mTextViewDebug.setVisibility(View.VISIBLE);
+            mTextView.setVisibility(View.GONE);
+            return;
         }
-        else{
-            t.setVisibility(View.INVISIBLE);
-        }
+
+        mTextViewDebug.setVisibility(View.GONE);
+
+        // Prompt user to Get picture of receipt
+        mTextView.setVisibility(View.VISIBLE);
+        mTextView.setText(getString(R.string.take_a_photo_receipt)
+                          + "\n or \n"
+                          + getString(R.string.select_image_from_gallery));
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    protected void onDestroy () {
+
+        // terminate any running tasks
+        if (mOcrAsyncTask != null && mOcrAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+            mOcrAsyncTask.cancel(true);
+        }
+
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu (Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected (MenuItem item) {
         // Action bar menu.
         switch (item.getItemId()) {
             case R.id.action_settings:
                 Intent settingsIntent = new Intent(this, SettingsActivity.class);
                 startActivity(settingsIntent);
                 return true;
+
             case R.id.action_gallery:
-                startSelectFromGallery();
+                startGallery();
                 return true;
+
             case R.id.action_camera:
-                startImageCapture();
+                startCamera();
                 return true;
+
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onSaveInstanceState (Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        // save file url in bundle as it will be null on screen orientation changes
+        outState.putParcelable("picture_uri", mPictureUri);
+    }
+
+    @Override
+    protected void onRestoreInstanceState (Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        // get the file url
+        mPictureUri = savedInstanceState.getParcelable("picture_uri");
+    }
+
+    @Override
+    protected void onActivityResult (int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        switch(requestCode) {
+        if (resultCode != RESULT_OK) {
+            Log.w(LOG_TAG, "ResultCode: " + resultCode + " RequestCode : " + requestCode);
+
+            // exit, nothing else to do here
+            return;
+        }
+
+        switch (requestCode) {
             // Retrieve Result from Welcome Screen
-            case SELECT_INPUT_METHOD:
-                if (resultCode == RESULT_OK) {
-                    inputMethod = data.getStringExtra("result_input_method");
+            case REQUEST_PICTURE_RETRIEVAL_PREF:
+                mPictureRetrievalPref = data.getStringExtra("result_input_method");
+                retrievePicture();
+                return;
+
+            // retrieve image from camera or gallery
+            case REQUEST_GALLERY:
+                if (data == null || data.getData() == null) {
+                    showAlert("Gallery data not found");
                 }
-                else {
-                    SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-                    inputMethod = sharedPrefs.getString("pref_input_method", getString(R.string.gallery));
+
+                String picturePath = getRealPicturePath(data.getData());
+                File pictureFile = new File (picturePath);
+                mPictureUri = Uri.fromFile(pictureFile);
+
+                previewReceipt();
+                return;
+
+            case REQUEST_TAKE_PICTURE:
+                if (mPictureUri == null) {
+                    showAlert("Picture path not found");
+                    return;
                 }
-                // Get receipt image based on selected/default input method.
-                getReceiptImage();
-                break;
 
-            // Retrieve Image from Gallery
-            case RESULT_LOAD_IMAGE:
-            case RESULT_IMAGE_CAPTURE:
-                if (resultCode == RESULT_OK && data != null) {
-                    Uri selectedImage = data.getData();
-                    String[] filePathColumn = { MediaStore.Images.Media.DATA };
-
-                    Cursor cursor = getContentResolver().query(selectedImage,
-                            filePathColumn, null, null, null);
-                    cursor.moveToFirst();
-
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    picturePath = cursor.getString(columnIndex);
-                    cursor.close();
-
-                    receiptImage = BitmapFactory.decodeFile(picturePath);
-                    ImageView imageView = (ImageView) findViewById(R.id.imageView);
-                    imageView.setImageBitmap(receiptImage);
-                }
-                break;
+                previewReceipt();
+                return;
 
             default:
                 // Not the intended intent
-                break;
         }
     }
 
-    // Setting up call backs for Action Bar that will
-    // overlay existing when long click on image
-    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+    private void previewReceipt () {
 
+        mTextViewDebug.setText("Real Path: " + mPictureUri.getPath());
+
+        mReceiptImage = PictureUtil.createBitmap(mPictureUri.getPath());
+        mImageView.setImageBitmap(mReceiptImage);
+    }
+
+    /**
+     * Gets the physical picture path
+     * @param contentUri
+     * @return
+     */
+    private String getRealPicturePath (Uri contentUri) {
+
+        Cursor cursor = null;
+        try {
+            String[] columns = {MediaStore.Images.Media.DATA};
+            cursor = getContentResolver().query(contentUri, columns, null, null, null);
+
+            int columnIndex = cursor.getColumnIndex(columns[0]);
+            cursor.moveToFirst();
+
+            return cursor.getString(columnIndex);
+        }
+        finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+    /**
+     * Show either gallery or camera to select/capture the receipt image
+     * This is based on what user has chosen as their default image selector
+     */
+    public void retrievePicture () {
+        // Retrieve image
+        if (mPictureRetrievalPref.equalsIgnoreCase(getString(R.string.gallery))) {
+            startGallery();
+            return;
+        }
+
+        if (mPictureRetrievalPref.equalsIgnoreCase(getString(R.string.camera))) {
+            startCamera();
+            return;
+        }
+
+        Log.d(LOG_TAG, "Image selector value does not match any path");
+    }
+
+    /**
+     * Displays the welcome activity so that user can select
+     * the default picture selector on the next startup
+     */
+    public void startWelcomeActivity () {
+        Intent intentWelcomeActivity = new Intent(MainActivity.this, WelcomeActivity.class);
+        startActivityForResult(intentWelcomeActivity, REQUEST_PICTURE_RETRIEVAL_PREF);
+    }
+
+    /**
+     * Show available gallery picker on user device to select the receipt image
+     */
+    private void startGallery () {
+        Intent intentGallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intentGallery, REQUEST_GALLERY);
+    }
+
+    /**
+     * Fires up the device camera so user can take the receipt picture
+     */
+    private void startCamera () {
+
+        Intent intentCamera = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        // Create the File where the photo should go
+        File pictureFile;
+        try {
+            pictureFile = PictureUtil.createFile();
+        }
+        catch (IOException e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            return;
+        }
+
+        mPictureUri = Uri.fromFile(pictureFile);
+        intentCamera.putExtra(MediaStore.EXTRA_OUTPUT, mPictureUri);
+        startActivityForResult(intentCamera, REQUEST_TAKE_PICTURE);
+    }
+
+    /**
+     * Starts OCR process for the receipt
+     */
+    public void startOcr (View view) {
+
+        // OCR process is running
+        if (mOcrAsyncTask != null && mOcrAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+            return;
+        }
+
+        mOcrAsyncTask = new OcrAsyncTask(this, mOcrListener);
+        mOcrAsyncTask.execute(mReceiptImage);
+    }
+
+    /**
+     * Displays an alert dialog
+     *
+     * @param alertMessage The alert message to be shown to the user
+     */
+    private void showAlert (String alertMessage) {
+        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+        alertBuilder.setMessage(alertMessage);
+        alertBuilder.setCancelable(true);
+        alertBuilder.setPositiveButton("Okay",
+                                       new DialogInterface.OnClickListener() {
+                                           public void onClick (DialogInterface dialog, int id) {
+                                               dialog.cancel();
+                                           }
+                                       });
+
+        AlertDialog alert = alertBuilder.create();
+        alert.show();
+    }
+
+    /**
+     * Setting up call backs for Action Bar that will
+     * overlay existing when long click on image
+     */
+    private class RotatePictureActionModeCallback implements ActionMode.Callback {
         // Called when the action mode is created; startActionMode() was called
         @Override
-        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+        public boolean onCreateActionMode (ActionMode mode, Menu menu) {
             // Inflate a menu resource providing context menu items
             MenuInflater inflater = mode.getMenuInflater();
             inflater.inflate(R.menu.menu_image, menu);
@@ -228,26 +397,27 @@ public class MainActivity extends AppCompatActivity {
         // Called each time the action mode is shown. Always called after onCreateActionMode, but
         // may be called multiple times if the mode is invalidated.
         @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+        public boolean onPrepareActionMode (ActionMode mode, Menu menu) {
             return false; // Return false if nothing is done
         }
 
         // Called when the user selects a contextual menu item
         @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            ImageView imageView = (ImageView) findViewById(R.id.imageView);
+        public boolean onActionItemClicked (ActionMode mode, MenuItem item) {
 
             switch (item.getItemId()) {
                 case R.id.rotate_left:
-                    receiptImage = RotateBitmap(receiptImage, 270);
-                    imageView.setImageBitmap(receiptImage);
+                    mReceiptImage = PictureUtil.rotateBitmap(mReceiptImage, 270);
+                    mImageView.setImageBitmap(mReceiptImage);
                     mode.finish(); // Action picked, so close the CAB
                     return true;
+
                 case R.id.rotate_right:
-                    receiptImage = RotateBitmap(receiptImage, 90);
-                    imageView.setImageBitmap(receiptImage);
+                    mReceiptImage = PictureUtil.rotateBitmap(mReceiptImage, 90);
+                    mImageView.setImageBitmap(mReceiptImage);
                     mode.finish(); // Action picked, so close the CAB
                     return true;
+
                 default:
                     return false;
             }
@@ -255,8 +425,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Called when the user exits the action mode
         @Override
-        public void onDestroyActionMode(ActionMode mode) {
+        public void onDestroyActionMode (ActionMode mode) {
             mActionMode = null;
         }
-    };
+    }
 }

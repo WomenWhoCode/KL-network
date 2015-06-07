@@ -3,7 +3,6 @@ package wwckl.projectmiki.activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -11,47 +10,31 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
 
+import wwckl.projectmiki.PreferenceKeys;
 import wwckl.projectmiki.R;
 
 public class WelcomeActivity extends AppCompatActivity {
-    CheckBox checkBoxShowWelcome;
+
+    private CheckBox mCheckBoxShowWelcome;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
 
-        checkBoxShowWelcome = (CheckBox) findViewById(R.id.cbShowWelcome);
+        mCheckBoxShowWelcome = (CheckBox) findViewById(R.id.cbShowWelcome);
         loadSavedPreferences();
     }
 
-    private void loadSavedPreferences() {
+    /**
+     * Loads user preference
+     */
+    private void loadSavedPreferences () {
         SharedPreferences sharedPreferences = PreferenceManager
                 .getDefaultSharedPreferences(this);
 
-        boolean checkBoxValue = sharedPreferences.getBoolean("pref_display_welcome", true);
-
-        if (checkBoxValue) {
-            checkBoxShowWelcome.setChecked(true);
-        } else {
-            checkBoxShowWelcome.setChecked(false);
-        }
-    }
-
-    private void savePreferencesBool(String key, boolean value) {
-        SharedPreferences sharedPreferences = PreferenceManager
-                .getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean(key, value);
-        editor.apply();
-    }
-
-    private void savePreferencesString(String key, String value) {
-        SharedPreferences sharedPreferences = PreferenceManager
-                .getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString(key, value);
-        editor.apply();
+        boolean checkBoxValue = sharedPreferences.getBoolean(PreferenceKeys.DISPLAY_WELCOME, true);
+        mCheckBoxShowWelcome.setChecked(checkBoxValue);
     }
 
     @Override
@@ -74,29 +57,61 @@ public class WelcomeActivity extends AppCompatActivity {
         }
     }
 
-    public void resultInputMethodSelected(View view){
+    /**
+     * Save user preference for boolean type
+     * @param key Preference Key
+     * @param value The value of the preference
+     */
+    private void savePreferencesBool(String key, boolean value) {
+        SharedPreferences sharedPreferences = PreferenceManager
+                .getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(key, value);
+        editor.apply();
+    }
+
+    /**
+     * Save user preference for string type
+     * @param key Preference Key
+     * @param value The value of the preference
+     */
+    private void savePreferencesString(String key, String value) {
+        SharedPreferences sharedPreferences = PreferenceManager
+                .getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(key, value);
+        editor.apply();
+    }
+
+    /***
+     * Save user preferred picture mode to SharedPreferences
+     * and returns back to the parent activity
+     *
+     * @param view
+     */
+    public void savePictureMode (View view){
         // Save preference of check box value.
-        savePreferencesBool("pref_display_welcome", checkBoxShowWelcome.isChecked());
+        savePreferencesBool(PreferenceKeys.DISPLAY_WELCOME, mCheckBoxShowWelcome.isChecked());
 
         Intent returnIntent = new Intent();
-        String inputMethod = "";
+        String pictureMode = "";
 
         // return the selected input Method to Main activity
         switch (view.getId()) {
             case R.id.btnBatch1:
-                inputMethod = getString(R.string.batch);
+                pictureMode = getString(R.string.batch);
                 break;
             case R.id.btnCamera1:
-                inputMethod = getString(R.string.camera);
+                pictureMode = getString(R.string.camera);
                 break;
             case R.id.btnGallery1:
-                inputMethod = getString(R.string.gallery);
+                pictureMode = getString(R.string.gallery);
                 break;
         }
 
-        savePreferencesString("pref_input_method", inputMethod);
+        savePreferencesString(PreferenceKeys.DEFAULT_PICTURE_RETRIEVE_MODE, pictureMode);
 
-        returnIntent.putExtra("result_input_method", inputMethod);
+        returnIntent.putExtra("result_input_method", pictureMode);
         setResult(RESULT_OK, returnIntent);
         finish();
     }
